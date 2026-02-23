@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { TIMEFRAMES, SYMBOL } from '../utils/constants.js'
 import { fetchCandles, fetchCurrentPrice, fetch24hStats, subscribeAggTrade, subscribeKline } from '../services/binanceService.js'
-import { generatePrediction, verifyPrediction } from '../services/predictionService.js'
+import { generatePrediction } from '../services/predictionService.js'
 import {
   addPrediction, updatePendingPredictions, getEntryPrice,
   setEntryPrice, getHistory
@@ -158,14 +158,11 @@ export function SolDataProvider({ children }) {
             ? generatePrediction(candles, tf.id)
             : current.prediction
 
-          // Verify previous prediction on closed candle
+          // On closed candle: resolve pending + store new prediction
           if (isClosed && current.prediction) {
-            if (current.prediction.signal !== 'NEUTRAL') {
-              const verifyResult = verifyPrediction(current.prediction, candle.close)
-              if (verifyResult !== 'PENDING') {
-                updatePendingPredictions(tf.id, candle.close)
-              }
-            }
+            // Always try to resolve ALL pending predictions for this TF
+            updatePendingPredictions(tf.id, candle.close)
+
             // Always store new prediction on closed candle
             if (shouldRecalc) {
               addPrediction(prediction)

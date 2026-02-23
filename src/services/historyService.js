@@ -22,9 +22,17 @@ function save(items) {
 
 /**
  * Add a new prediction to history
+ * Skips duplicate if same tfId was already added within last 30 seconds
  */
 export function addPrediction(prediction) {
   const history = load()
+  // Deduplicate: skip if same tfId has an entry within the last 30s
+  const thirtySecsAgo = Date.now() - 30_000
+  const recentDup = history.find(
+    h => h.tfId === prediction.tfId && h.timestamp > thirtySecsAgo
+  )
+  if (recentDup) return recentDup
+
   const isNeutral = prediction.signal === 'NEUTRAL'
   const entry = {
     id: `${prediction.tfId}_${prediction.timestamp}`,
