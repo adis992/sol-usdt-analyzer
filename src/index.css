@@ -399,6 +399,12 @@ html, body {
   border: 1px solid var(--yellow);
 }
 
+.prediction-result-badge.neutral {
+  background: rgba(160,160,160,0.1);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
 /* ---- INDICATORS ROW ---- */
 .indicators-row {
   display: flex;
@@ -481,6 +487,7 @@ html, body {
 .history-table tr.hit-row td:first-child { border-left: 3px solid var(--green); }
 .history-table tr.miss-row td:first-child { border-left: 3px solid var(--red); }
 .history-table tr.pending-row td:first-child { border-left: 3px solid var(--yellow); }
+.history-table tr.neutral-row td:first-child { border-left: 3px solid var(--border); }
 
 .accuracy-bar-wrap { margin-top: 16px; }
 .accuracy-bar {

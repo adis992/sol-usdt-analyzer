@@ -25,6 +25,7 @@ function save(items) {
  */
 export function addPrediction(prediction) {
   const history = load()
+  const isNeutral = prediction.signal === 'NEUTRAL'
   const entry = {
     id: `${prediction.tfId}_${prediction.timestamp}`,
     tfId: prediction.tfId,
@@ -33,8 +34,8 @@ export function addPrediction(prediction) {
     votes: prediction.votes,
     entryPrice: prediction.entryPrice,
     timestamp: prediction.timestamp,
-    result: 'PENDING',
-    resolvedAt: null,
+    result: isNeutral ? 'NEUTRAL' : 'PENDING',
+    resolvedAt: isNeutral ? prediction.timestamp : null,
     resolvedPrice: null,
     profitPct: null,
   }

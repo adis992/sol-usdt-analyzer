@@ -88,10 +88,8 @@ export function SolDataProvider({ children }) {
                 tfDataRef.current[tf.id] = newEntry
                 setTfData(prev => ({ ...prev, [tf.id]: newEntry }))
 
-                // Store initial prediction
-                if (prediction.signal !== 'NEUTRAL') {
-                  addPrediction(prediction)
-                }
+                // Always store initial prediction (including NEUTRAL)
+                addPrediction(prediction)
               } catch (e) {
                 console.warn(`[Data] Failed to load ${tf.id}:`, e.message)
               }
@@ -161,15 +159,17 @@ export function SolDataProvider({ children }) {
             : current.prediction
 
           // Verify previous prediction on closed candle
-          if (isClosed && current.prediction && current.prediction.signal !== 'NEUTRAL') {
-            const verifyResult = verifyPrediction(current.prediction, candle.close)
-            if (verifyResult !== 'PENDING') {
-              updatePendingPredictions(tf.id, candle.close)
-              setHistory(getHistory())
+          if (isClosed && current.prediction) {
+            if (current.prediction.signal !== 'NEUTRAL') {
+              const verifyResult = verifyPrediction(current.prediction, candle.close)
+              if (verifyResult !== 'PENDING') {
+                updatePendingPredictions(tf.id, candle.close)
+              }
             }
-            // Store new prediction
-            if (shouldRecalc && prediction.signal !== 'NEUTRAL') {
+            // Always store new prediction on closed candle
+            if (shouldRecalc) {
               addPrediction(prediction)
+              setHistory(getHistory())
             }
           }
 

@@ -88,13 +88,13 @@ export default function HistoryView() {
         ))}
 
         <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>Rezultat:</span>
-        {['all', 'HIT', 'MISS', 'PENDING'].map(r => (
+        {['all', 'HIT', 'MISS', 'PENDING', 'NEUTRAL'].map(r => (
           <button
             key={r}
             className={`filter-btn ${filterResult === r ? 'active' : ''}`}
             onClick={() => setFilterResult(r)}
           >
-            {r === 'all' ? 'Sve' : r === 'HIT' ? '✅ Pogodak' : r === 'MISS' ? '❌ Promašaj' : '⏳ Na čekanju'}
+            {r === 'all' ? 'Sve' : r === 'HIT' ? '✅ Pogodak' : r === 'MISS' ? '❌ Promašaj' : r === 'PENDING' ? '⏳ Na čekanju' : '⚪ Neutral'}
           </button>
         ))}
       </div>
@@ -128,7 +128,8 @@ export default function HistoryView() {
                   key={item.id}
                   className={
                     item.result === 'HIT' ? 'hit-row' :
-                    item.result === 'MISS' ? 'miss-row' : 'pending-row'
+                    item.result === 'MISS' ? 'miss-row' :
+                    item.result === 'NEUTRAL' ? 'neutral-row' : 'pending-row'
                   }
                 >
                   <td style={{ color: 'var(--text-muted)' }}>{filtered.length - i}</td>
@@ -164,7 +165,8 @@ export default function HistoryView() {
                   <td>
                     <span className={`prediction-result-badge ${item.result.toLowerCase()}`}>
                       {item.result === 'HIT' ? '✅ HIT' :
-                       item.result === 'MISS' ? '❌ MISS' : '⏳ ČEKA'}
+                       item.result === 'MISS' ? '❌ MISS' :
+                       item.result === 'NEUTRAL' ? '⚪ NEUTRAL' : '⏳ ČEKA'}
                     </span>
                   </td>
                 </tr>
