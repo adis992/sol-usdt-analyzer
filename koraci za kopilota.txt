@@ -1,0 +1,24 @@
+Napravi mi panelu u cemu zelis da radi na pc realtime pravi podaci koji ce analizirati SOL/USDT na sljedece timeframe i prognozirati kretanje u tom timeframe
+
+
+
+1min
+3
+5
+15
+30
+1hrs
+4hrs
+6
+8
+12
+1 dan
+1 sedmica
+1 mjesec
+1 godina
+
+tabela neka ima trenutnu cijenu ulaznu cijenu profit u %  i prognozu desno skroz i sve to neka u historiju biljezi moras ga napraviti da  bude mal te ne 100% koristi 10 udarnih indikatora i necemo nikad masati i historiju kripta komplet
+
+i ako je pogodio na taj time frame zeleno mora biti ako je omasio a ne smije masati 1 na 10 smije omasiti :)  
+
+dodaj ako ima jos sta korisno i to je to jednostavfno al mora biti tacno i funkcionalno samo za sol usdt 

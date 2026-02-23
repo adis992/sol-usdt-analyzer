@@ -1,0 +1,90 @@
+{
+  "name": "sol-usdt-analyzer",
+  "version": "1.0.0",
+  "description": "Real-time SOL/USDT Crypto Analyzer - Windows / Android / iOS",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build:win": "npm run build && electron-builder --win --x64",
+    "build:android": "npm run build && npx cap sync android",
+    "build:ios": "npm run build && npx cap sync ios",
+    "cap:init": "npx cap init",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios"
+  },
+  "keywords": ["crypto", "solana", "analyzer", "trading"],
+  "author": "SOL Analyzer",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.22.3",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/push-notifications": "^6.0.2",
+    "@capacitor/preferences": "^6.0.3",
+    "@capacitor/local-notifications": "^6.1.0",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/network": "^6.0.3",
+    "recharts": "^2.12.7",
+    "lucide-react": "^0.446.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8",
+    "electron": "^32.1.2",
+    "electron-builder": "^25.0.5",
+    "concurrently": "^9.0.1",
+    "wait-on": "^8.0.1",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
+  },
+  "build": {
+    "appId": "com.crypto.solanalyzer",
+    "productName": "SOL USDT Analyzer",
+    "copyright": "Copyright © 2026",
+    "directories": {
+      "output": "output_app/windows"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SOL Analyzer"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.finance",
+      "icon": "public/icon.icns"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "icon": "public/icon.png"
+    }
+  }
+}

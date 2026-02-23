@@ -1,0 +1,10 @@
+node_modules/
+dist/
+output_app/windows/
+output_app/android/
+output_app/ios/
+*.log
+.env
+.env.local
+android/
+ios/
