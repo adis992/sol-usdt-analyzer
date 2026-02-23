@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useSolData } from '../hooks/useSolData.jsx'
 import TimeframeCard from './TimeframeCard.jsx'
 import PriceTable from './PriceTable.jsx'
+import MultiTFPanel from './MultiTFPanel.jsx'
 import { TIMEFRAMES, TF_GROUPS } from '../utils/constants.js'
 import { calcAccuracyStats } from '../services/predictionService.js'
 
@@ -128,6 +129,9 @@ export default function Dashboard() {
           <span>💡 Klikni na karticu za detalje indikatora</span>
         </div>
       )}
+
+      {/* Multi-TF Consensus Panel */}
+      {!loading && <MultiTFPanel />}
     </div>
   )
 }

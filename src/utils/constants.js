@@ -46,6 +46,28 @@ export const INDICATOR_WEIGHTS = {
 
 export const TOTAL_WEIGHT = Object.values(INDICATOR_WEIGHTS).reduce((a, b) => a + b, 0)
 
+// Multi-Timeframe weights — longer TF = more reliable = higher weight
+// Short TFs are noisy, macro TFs give strong trend direction
+export const MTF_WEIGHTS = {
+  '1m':  0.5,
+  '3m':  0.6,
+  '5m':  0.7,
+  '15m': 1.0,
+  '30m': 1.3,
+  '1h':  1.5,
+  '4h':  2.0,
+  '6h':  2.0,
+  '8h':  2.0,
+  '12h': 2.5,
+  '1d':  3.0,
+  '1w':  3.5,
+  '1M':  4.0,
+  '1y':  3.5,
+}
+// MTF signal thresholds (stricter than single-TF for higher accuracy)
+export const MTF_STRONG_THRESHOLD = 0.55
+export const MTF_SIGNAL_THRESHOLD = 0.35
+
 // Confidence thresholds
 export const STRONG_SIGNAL_THRESHOLD = 0.65  // 65% weighted consensus
 export const SIGNAL_THRESHOLD = 0.50          // 50% for weaker signal

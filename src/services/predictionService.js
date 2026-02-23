@@ -1,6 +1,10 @@
 // Prediction Service — Consensus-based signal generation from 10 indicators
 import { runAllIndicators } from './indicatorService.js'
-import { INDICATOR_WEIGHTS, TOTAL_WEIGHT, STRONG_SIGNAL_THRESHOLD, SIGNAL_THRESHOLD } from '../utils/constants.js'
+import {
+  INDICATOR_WEIGHTS, TOTAL_WEIGHT, STRONG_SIGNAL_THRESHOLD, SIGNAL_THRESHOLD,
+  MTF_WEIGHTS, MTF_STRONG_THRESHOLD, MTF_SIGNAL_THRESHOLD,
+  TF_GROUPS,
+} from '../utils/constants.js'
 
 const WEIGHT_MAP = {
   rsi:      INDICATOR_WEIGHTS.RSI,
@@ -135,5 +139,115 @@ export function calcAccuracyStats(historyItems) {
     last10: last10.length,
     hitsLast10,
     accuracyLast10: last10.length > 0 ? (hitsLast10 / last10.length) * 100 : 0,
+  }
+}
+/**
+ * Calculate the Multi-Timeframe (MTF) combined signal
+ * Uses weighted consensus across all 14 timeframes.
+ * Longer TFs get higher weight → higher accuracy.
+ *
+ * @param {Object} tfData  { [tfId]: { candles, prediction, ... } }
+ * @returns {Object|null}
+ */
+export function calcMultiTFSignal(tfData) {
+  if (!tfData) return null
+
+  let weightedSum = 0
+  let totalWeight = 0
+  let buyCount = 0
+  let sellCount = 0
+  let neutralCount = 0
+  let totalTFs = 0
+
+  const breakdown = {}
+
+  for (const [tfId, data] of Object.entries(tfData)) {
+    if (!data?.prediction) continue
+    const { prediction } = data
+    const weight = MTF_WEIGHTS[tfId] ?? 1.0
+    const score = prediction.weightedScore ?? 0
+
+    weightedSum += score * weight
+    totalWeight += weight
+    totalTFs++
+
+    const vote = score > 0.05 ? 'buy' : score < -0.05 ? 'sell' : 'neutral'
+    if (vote === 'buy') buyCount++
+    else if (vote === 'sell') sellCount++
+    else neutralCount++
+
+    breakdown[tfId] = {
+      score,
+      weight,
+      signal: prediction.signal,
+      confidence: prediction.confidence,
+      vote,
+    }
+  }
+
+  if (totalWeight === 0 || totalTFs === 0) return null
+
+  const normalizedScore = weightedSum / totalWeight
+  const confidence = Math.min(Math.abs(normalizedScore) * 100, 100)
+
+  // Stricter thresholds for MTF — requires broader agreement
+  let signal = 'NEUTRAL'
+  if      (normalizedScore >= MTF_STRONG_THRESHOLD)  signal = 'STRONG_BUY'
+  else if (normalizedScore >= MTF_SIGNAL_THRESHOLD)  signal = 'BUY'
+  else if (normalizedScore <= -MTF_STRONG_THRESHOLD) signal = 'STRONG_SELL'
+  else if (normalizedScore <= -MTF_SIGNAL_THRESHOLD) signal = 'SELL'
+
+  // Agreement rate: how many TFs align with the final signal
+  const alignedCount = signal.includes('BUY') ? buyCount
+                     : signal.includes('SELL') ? sellCount
+                     : neutralCount
+  const agreementPct = totalTFs > 0 ? (alignedCount / totalTFs) * 100 : 0
+
+  // Group breakdown
+  const groupBreakdown = {}
+  for (const [groupKey, grp] of Object.entries(TF_GROUPS)) {
+    const tfsInGroup = grp.tfs.filter(id => breakdown[id])
+    if (tfsInGroup.length === 0) continue
+
+    let gSum = 0, gWeight = 0
+    let gBuy = 0, gSell = 0, gNeutral = 0
+    for (const id of tfsInGroup) {
+      const b = breakdown[id]
+      gSum += b.score * b.weight
+      gWeight += b.weight
+      if (b.vote === 'buy') gBuy++
+      else if (b.vote === 'sell') gSell++
+      else gNeutral++
+    }
+    const gScore = gWeight > 0 ? gSum / gWeight : 0
+    let gSignal = 'NEUTRAL'
+    if      (gScore >= MTF_STRONG_THRESHOLD)  gSignal = 'STRONG_BUY'
+    else if (gScore >= MTF_SIGNAL_THRESHOLD)  gSignal = 'BUY'
+    else if (gScore <= -MTF_STRONG_THRESHOLD) gSignal = 'STRONG_SELL'
+    else if (gScore <= -MTF_SIGNAL_THRESHOLD) gSignal = 'SELL'
+
+    groupBreakdown[groupKey] = {
+      label: grp.label,
+      signal: gSignal,
+      score: gScore,
+      buy: gBuy,
+      sell: gSell,
+      neutral: gNeutral,
+      total: tfsInGroup.length,
+    }
+  }
+
+  return {
+    signal,
+    confidence,
+    weightedScore: normalizedScore,
+    buyCount,
+    sellCount,
+    neutralCount,
+    totalTFs,
+    alignedCount,
+    agreementPct,
+    breakdown,
+    groupBreakdown,
   }
 }

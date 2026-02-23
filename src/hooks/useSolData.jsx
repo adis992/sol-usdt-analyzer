@@ -152,8 +152,8 @@ export function SolDataProvider({ children }) {
             if (candles.length > 260) candles.shift()
           }
 
-          // Recalculate prediction every 5 closed candles or on price update
-          const shouldRecalc = isClosed || (Date.now() - (current.lastPredictionTs || 0) > 30000)
+          // Recalculate prediction ONLY on closed candle — each TF refreshes on its own close
+          const shouldRecalc = isClosed
           const prediction = shouldRecalc
             ? generatePrediction(candles, tf.id)
             : current.prediction
