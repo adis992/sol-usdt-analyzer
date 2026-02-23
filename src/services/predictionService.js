@@ -72,6 +72,14 @@ export function generatePrediction(candles, tfId) {
   else if (normalizedScore <= -SIGNAL_THRESHOLD)         signal = 'SELL'
 
   const lastCandle = candles[candles.length - 1]
+  const ep = lastCandle.close
+
+  // TP/SL targets based on signal strength
+  let tpPct = 0, slPct = 0
+  if (signal === 'STRONG_BUY')  { tpPct =  0.015; slPct = -0.008 }
+  else if (signal === 'BUY')    { tpPct =  0.008; slPct = -0.004 }
+  else if (signal === 'STRONG_SELL') { tpPct = -0.015; slPct =  0.008 }
+  else if (signal === 'SELL')   { tpPct = -0.008; slPct =  0.004 }
 
   return {
     signal,
@@ -79,9 +87,11 @@ export function generatePrediction(candles, tfId) {
     weightedScore: normalizedScore,
     indicators: details,
     votes,
-    entryPrice: lastCandle.close,
+    entryPrice: ep,
     entryHigh:  lastCandle.high,
     entryLow:   lastCandle.low,
+    targetTP: tpPct !== 0 ? parseFloat((ep * (1 + tpPct)).toFixed(4)) : null,
+    targetSL: slPct !== 0 ? parseFloat((ep * (1 + slPct)).toFixed(4)) : null,
     timestamp: Date.now(),
     tfId,
   }

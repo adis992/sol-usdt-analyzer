@@ -116,6 +116,7 @@ export default function HistoryView() {
                 <th>Signal</th>
                 <th>Pouzdanost</th>
                 <th>Ulazna $</th>
+                <th>Cilj TP / SL</th>
                 <th>Izlazna $</th>
                 <th>Profit %</th>
                 <th>↑/↓/–</th>
@@ -146,6 +147,12 @@ export default function HistoryView() {
                   </td>
                   <td>{item.confidence?.toFixed(1)}%</td>
                   <td>{fmtPrice(item.entryPrice)}</td>
+                  <td style={{ fontSize: 11 }}>
+                    {item.targetTP
+                      ? <><span style={{ color: 'var(--green)' }}>TP {fmtPrice(item.targetTP)}</span><br /><span style={{ color: 'var(--red)' }}>SL {fmtPrice(item.targetSL)}</span></>
+                      : <span style={{ color: 'var(--text-muted)' }}>–</span>
+                    }
+                  </td>
                   <td>{item.resolvedPrice ? fmtPrice(item.resolvedPrice) : '–'}</td>
                   <td>
                     <span style={{

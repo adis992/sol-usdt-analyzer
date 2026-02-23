@@ -33,6 +33,8 @@ export function addPrediction(prediction) {
     confidence: prediction.confidence,
     votes: prediction.votes,
     entryPrice: prediction.entryPrice,
+    targetTP: prediction.targetTP ?? null,
+    targetSL: prediction.targetSL ?? null,
     timestamp: prediction.timestamp,
     result: isNeutral ? 'NEUTRAL' : 'PENDING',
     resolvedAt: isNeutral ? prediction.timestamp : null,
@@ -56,12 +58,14 @@ export function updatePendingPredictions(tfId, currentPrice) {
       const result = verifyPrediction(item, currentPrice)
       if (result !== 'PENDING') {
         changed = true
-        return {
+          const isSell = item.signal === 'SELL' || item.signal === 'STRONG_SELL'
+          const rawPct = ((currentPrice - item.entryPrice) / item.entryPrice) * 100
+          return {
           ...item,
           result,
           resolvedAt: Date.now(),
           resolvedPrice: currentPrice,
-          profitPct: ((currentPrice - item.entryPrice) / item.entryPrice) * 100,
+          profitPct: isSell ? -rawPct : rawPct,
         }
       }
     }
