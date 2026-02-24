@@ -321,4 +321,60 @@ export function calcMultiTFSignal(tfData) {
     breakdown,
     groupBreakdown,
   }
+}/**
+ * Historical Pattern Analysis - predicts tomorrow's direction based on history
+ */
+export function analyzeHistoricalPattern(candles) {
+  if (!candles || candles.length < 30) return null
+  
+  const closes = candles.map(c => c.close)
+  const lastPrice = closes[closes.length - 1]
+  
+  const last7Days = closes.slice(-7)
+  const greenDays = last7Days.filter((c, i) => i > 0 && c > last7Days[i-1]).length
+  const redDays = last7Days.filter((c, i) => i > 0 && c < last7Days[i-1]).length
+  
+  const last14Days = closes.slice(-14)
+  const trend14 = ((last14Days[last14Days.length-1] - last14Days[0]) / last14Days[0]) * 100
+  
+  const last30 = closes.slice(-30)
+  const avg30 = last30.reduce((a,b) => a+b, 0) / last30.length
+  const volatility = Math.sqrt(last30.reduce((a,b) => a + Math.pow(b - avg30, 2), 0) / last30.length)
+  const volatilityPct = (volatility / avg30) * 100
+  
+  const sma7 = last7Days.reduce((a,b) => a+b, 0) / last7Days.length
+  const sma14 = last14Days.reduce((a,b) => a+b, 0) / last14Days.length
+  const sma30 = avg30
+  
+  const aboveSMA7 = lastPrice > sma7
+  const aboveSMA14 = lastPrice > sma14
+  const aboveSMA30 = lastPrice > sma30
+  
+  const momentum = ((lastPrice - closes[closes.length-3]) / closes[closes.length-3]) * 100
+  
+  let prediction = 'NEUTRAL'
+  let confidence = 50
+  
+  if (greenDays >= 5 && trend14 > 5 && aboveSMA7 && aboveSMA14 && momentum > 1) {
+    prediction = 'GREEN'; confidence = 85
+  } else if (greenDays >= 4 && trend14 > 2 && aboveSMA14 && momentum > 0.5) {
+    prediction = 'GREEN'; confidence = 70
+  } else if (greenDays > redDays && trend14 > 0 && aboveSMA30) {
+    prediction = 'GREEN'; confidence = 60
+  } else if (redDays >= 5 && trend14 < -5 && !aboveSMA7 && !aboveSMA14 && momentum < -1) {
+    prediction = 'RED'; confidence = 85
+  } else if (redDays >= 4 && trend14 < -2 && !aboveSMA14 && momentum < -0.5) {
+    prediction = 'RED'; confidence = 70
+  } else if (redDays > greenDays && trend14 < 0 && !aboveSMA30) {
+    prediction = 'RED'; confidence = 60
+  }
+  
+  return {
+    prediction, confidence, greenDays, redDays,
+    trend14: trend14.toFixed(2),
+    volatility: volatilityPct.toFixed(2),
+    momentum: momentum.toFixed(2),
+    aboveSMA7, aboveSMA14, aboveSMA30,
+    summary: Zadnjih 7 dana: 🟢/🔴 | Trend: %
+  }
 }

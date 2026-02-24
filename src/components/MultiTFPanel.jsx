@@ -2,7 +2,7 @@
 // Aggregates all 14 timeframes using weighted scoring for ~95%+ accuracy
 import React, { useMemo } from 'react'
 import { useSolData } from '../hooks/useSolData.jsx'
-import { calcMultiTFSignal } from '../services/predictionService.js'
+import { calcMultiTFSignal, analyzeHistoricalPattern } from '../services/predictionService.js'
 import { TIMEFRAMES, TF_GROUPS } from '../utils/constants.js'
 
 const SIGNAL_COLORS = {
@@ -38,6 +38,13 @@ export default function MultiTFPanel() {
   const { tfData, loading } = useSolData()
 
   const mtf = useMemo(() => calcMultiTFSignal(tfData), [tfData])
+  
+  // Historical pattern from daily candles
+  const histPattern = useMemo(() => {
+    const dailyData = tfData?.['1d']
+    if (!dailyData?.candles) return null
+    return analyzeHistoricalPattern(dailyData.candles)
+  }, [tfData])
 
   if (loading || !mtf) return null
 
@@ -153,6 +160,45 @@ export default function MultiTFPanel() {
           )
         })}
       </div>
+
+      {/* ── Historical Pattern Prediction ── */}
+      {histPattern && (
+        <div className="mtf-history-prediction" style={{
+          background: histPattern.prediction === 'GREEN' ? 'rgba(20,241,149,0.08)' : 
+                      histPattern.prediction === 'RED' ? 'rgba(255,68,102,0.08)' : 'rgba(100,100,100,0.05)',
+          border: `1px solid ${histPattern.prediction === 'GREEN' ? 'var(--green)' : 
+                               histPattern.prediction === 'RED' ? 'var(--red)' : 'var(--border)'}`,
+          borderRadius: 8,
+          padding: '12px 16px',
+          marginTop: 12
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--text)' }}>
+            📊 Historijska Prognoza - Sutra će biti:
+            <span style={{
+              marginLeft: 8,
+              fontSize: 16,
+              fontWeight: 700,
+              color: histPattern.prediction === 'GREEN' ? 'var(--green)' : 
+                     histPattern.prediction === 'RED' ? 'var(--red)' : 'var(--text-muted)'
+            }}>
+              {histPattern.prediction === 'GREEN' ? '🟢 ZELENO' : 
+               histPattern.prediction === 'RED' ? '🔴 CRVENO' : '⚪ NEUTRALNO'}
+            </span>
+            <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+              ({histPattern.confidence}% pouzdanost)
+            </span>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+            {histPattern.summary}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>
+            Momentum: {histPattern.momentum}% | Volatilnost: {histPattern.volatility}% | 
+            {histPattern.aboveSMA7 && ' Iznad SMA7 ✓'}
+            {histPattern.aboveSMA14 && ' Iznad SMA14 ✓'}
+            {histPattern.aboveSMA30 && ' Iznad SMA30 ✓'}
+          </div>
+        </div>
+      )}
 
       {/* ── Footer info ── */}
       <div className="mtf-footer">
