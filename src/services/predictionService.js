@@ -17,6 +17,7 @@ const WEIGHT_MAP = {
   williams: INDICATOR_WEIGHTS.WILLIAMS,
   cci:      INDICATOR_WEIGHTS.CCI,
   obv:      INDICATOR_WEIGHTS.OBV,
+  volume:   INDICATOR_WEIGHTS.VOLUME,
 }
 
 function signalToVote(signal) {
@@ -65,21 +66,81 @@ export function generatePrediction(candles, tfId) {
   const normalizedScore = totalWeightUsed > 0 ? weightedSum / totalWeightUsed : 0
   const confidence = Math.abs(normalizedScore) * 100
 
+  // For short timeframes (1m-5m), require HIGHER consensus for accuracy
+  let strongThreshold = STRONG_SIGNAL_THRESHOLD
+  let signalThreshold = SIGNAL_THRESHOLD
+  
+  if (tfId === '1m' || tfId === '3m' || tfId === '5m') {
+    strongThreshold = 0.70  // 70% consensus required for short TFs
+    signalThreshold = 0.55  // 55% for regular signal
+    
+    // Additional validation: at least 7 out of 10 indicators must agree
+    const totalIndicators = votes.buy + votes.sell + votes.neutral
+    const strongVotes = Math.max(votes.buy, votes.sell)
+    if (totalIndicators >= 10 && strongVotes < 7) {
+      // Not enough agreement - force NEUTRAL
+      return {
+        signal: 'NEUTRAL',
+        confidence: 0,
+        weightedScore: normalizedScore,
+        indicators: details,
+        votes,
+        entryPrice: ep,
+        entryHigh: lastCandle.high,
+        entryLow: lastCandle.low,
+        targetTP: null,
+        targetSL: null,
+        timestamp: Date.now(),
+        tfId,
+      }
+    }
+  }
+
   let signal = 'NEUTRAL'
-  if (normalizedScore >= STRONG_SIGNAL_THRESHOLD) signal = 'STRONG_BUY'
-  else if (normalizedScore >= SIGNAL_THRESHOLD)   signal = 'BUY'
-  else if (normalizedScore <= -STRONG_SIGNAL_THRESHOLD) signal = 'STRONG_SELL'
-  else if (normalizedScore <= -SIGNAL_THRESHOLD)         signal = 'SELL'
+  if (normalizedScore >= strongThreshold) signal = 'STRONG_BUY'
+  else if (normalizedScore >= signalThreshold)   signal = 'BUY'
+  else if (normalizedScore <= -strongThreshold) signal = 'STRONG_SELL'
+  else if (normalizedScore <= -signalThreshold)         signal = 'SELL'
 
   const lastCandle = candles[candles.length - 1]
   const ep = lastCandle.close
 
-  // TP/SL targets based on signal strength
+  // TP/SL targets based on TIMEFRAME - longer TF = bigger targets
   let tpPct = 0, slPct = 0
-  if (signal === 'STRONG_BUY')  { tpPct =  0.015; slPct = -0.008 }
-  else if (signal === 'BUY')    { tpPct =  0.008; slPct = -0.004 }
-  else if (signal === 'STRONG_SELL') { tpPct = -0.015; slPct =  0.008 }
-  else if (signal === 'SELL')   { tpPct = -0.008; slPct =  0.004 }
+  
+  // Timeframe-based multipliers for realistic targets
+  const tfMultipliers = {
+    '1m':  { strong: 0.005, normal: 0.003 },   // 0.5% / 0.3% - micro scalp
+    '3m':  { strong: 0.008, normal: 0.005 },   // 0.8% / 0.5%
+    '5m':  { strong: 0.012, normal: 0.007 },   // 1.2% / 0.7%
+    '15m': { strong: 0.020, normal: 0.012 },   // 2.0% / 1.2%
+    '30m': { strong: 0.030, normal: 0.018 },   // 3.0% / 1.8%
+    '1h':  { strong: 0.045, normal: 0.025 },   // 4.5% / 2.5%
+    '4h':  { strong: 0.080, normal: 0.050 },   // 8.0% / 5.0%
+    '6h':  { strong: 0.100, normal: 0.060 },   // 10% / 6%
+    '8h':  { strong: 0.120, normal: 0.070 },   // 12% / 7%
+    '12h': { strong: 0.150, normal: 0.090 },   // 15% / 9%
+    '1d':  { strong: 0.200, normal: 0.120 },   // 20% / 12% - swing trade
+    '1w':  { strong: 0.400, normal: 0.250 },   // 40% / 25% - weekly position
+    '1M':  { strong: 0.800, normal: 0.500 },   // 80% / 50% - monthly hold
+    '1y':  { strong: 1.500, normal: 1.000 },   // 150% / 100% - yearly vision (350-400$)
+  }
+  
+  const mult = tfMultipliers[tfId] || { strong: 0.015, normal: 0.008 }
+  
+  if (signal === 'STRONG_BUY') {
+    tpPct = mult.strong
+    slPct = -mult.strong * 0.5  // SL is 50% of TP distance
+  } else if (signal === 'BUY') {
+    tpPct = mult.normal
+    slPct = -mult.normal * 0.5
+  } else if (signal === 'STRONG_SELL') {
+    tpPct = -mult.strong
+    slPct = mult.strong * 0.5
+  } else if (signal === 'SELL') {
+    tpPct = -mult.normal
+    slPct = mult.normal * 0.5
+  }
 
   return {
     signal,

@@ -366,5 +366,36 @@ export function runAllIndicators(candles) {
     williams: calcWilliams(candles),
     cci:      calcCCI(candles),
     obv:      calcOBV(candles),
+    volume:   calcVolumeConfirmation(candles),
+  }
+}
+
+// ─── 11. Volume Confirmation (High volume = stronger signal) ──────────────────
+export function calcVolumeConfirmation(candles) {
+  if (candles.length < 20) return { value: null, signal: 'NEUTRAL', detail: 'Nema dovoljno podataka' }
+  
+  const vols = volumes(candles)
+  const avgVol = vols.slice(-20).reduce((a,b) => a+b, 0) / 20
+  const lastVol = vols[vols.length - 1]
+  const volRatio = lastVol / avgVol
+  
+  const cls = closes(candles)
+  const priceChange = cls[cls.length - 1] - cls[cls.length - 2]
+  
+  let signal = 'NEUTRAL'
+  
+  // High volume confirmation
+  if (volRatio > 1.5) {
+    if (priceChange > 0) signal = 'BUY'   // volume surge + price up
+    else if (priceChange < 0) signal = 'SELL' // volume surge + price down
+  } else if (volRatio > 1.2) {
+    if (priceChange > 0) signal = 'BUY'
+    else if (priceChange < 0) signal = 'SELL'
+  }
+  
+  return {
+    value: { volume: lastVol, avgVolume: avgVol, ratio: volRatio },
+    signal,
+    detail: `Vol: ${(lastVol/1000).toFixed(0)}K (${(volRatio*100).toFixed(0)}% avg)`
   }
 }

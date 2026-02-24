@@ -30,7 +30,7 @@ export const TF_GROUPS = {
   macro:  { label: 'Makro',        tfs: ['1d','1w','1M','1y'] },
 }
 
-// Indicator weights (total ~12.0)
+// Indicator weights (total ~13.0)
 export const INDICATOR_WEIGHTS = {
   RSI:        1.5,
   MACD:       1.5,
@@ -42,6 +42,7 @@ export const INDICATOR_WEIGHTS = {
   WILLIAMS:   1.0,
   CCI:        1.0,
   OBV:        1.0,
+  VOLUME:     1.0,  // Volume confirmation
 }
 
 export const TOTAL_WEIGHT = Object.values(INDICATOR_WEIGHTS).reduce((a, b) => a + b, 0)

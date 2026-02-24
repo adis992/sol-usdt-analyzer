@@ -13,6 +13,7 @@ const INDICATOR_NAMES = {
   williams: 'W%R',
   cci:      'CCI',
   obv:      'OBV',
+  volume:   'Volume',
 }
 
 export default function TimeframeCard({ tf, data }) {

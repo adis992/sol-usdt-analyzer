@@ -171,8 +171,27 @@ export function SolDataProvider({ children }) {
             if (candles.length > 260) candles.shift()
           }
 
-          // Recalculate prediction ONLY on closed candle — each TF refreshes on its own close
-          const shouldRecalc = isClosed
+          // Recalculate prediction logic:
+          // - Short TF (1m-5m): every closed candle
+          // - Medium TF (15m-1h): every closed candle
+          // - Long TF (4h-12h): every closed candle
+          // - Macro TF (1d+): only on significant price moves (>3%)
+          let shouldRecalc = false
+          
+          if (isClosed) {
+            const isMacro = ['1d', '1w', '1M', '1y'].includes(tf.id)
+            
+            if (isMacro && current.prediction) {
+              // Only recalc macro TF on significant move (>3% from last prediction)
+              const lastEntry = current.prediction.entryPrice
+              const pctChange = Math.abs((candle.close - lastEntry) / lastEntry)
+              shouldRecalc = pctChange >= 0.03 // 3% threshold
+            } else {
+              // All other TFs: recalc every closed candle
+              shouldRecalc = true
+            }
+          }
+          
           const prediction = shouldRecalc
             ? generatePrediction(candles, tf.id)
             : current.prediction
