@@ -102,6 +102,41 @@ export default function TimeframeCard({ tf, data }) {
         <span className="prediction-confidence">{confidence}% consensus</span>
       </div>
 
+      {/* Entry / TP / SL Info */}
+      {prediction && prediction.signal !== 'NEUTRAL' && (
+        <div style={{
+          background: 'rgba(255,255,255,0.03)',
+          borderRadius: 6,
+          padding: '8px 10px',
+          marginTop: 8,
+          fontSize: 11,
+          border: '1px solid var(--border)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ color: 'var(--text-muted)' }}>🎯 Ulaz:</span>
+            <span style={{ fontWeight: 600, color: 'var(--text)' }}>
+              ${prediction.entryPrice?.toFixed(4) ?? '–'}
+            </span>
+          </div>
+          {prediction.targetTP && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ color: 'var(--green)' }}>✅ TP cilj:</span>
+              <span style={{ fontWeight: 600, color: 'var(--green)' }}>
+                ${prediction.targetTP.toFixed(4)}
+              </span>
+            </div>
+          )}
+          {prediction.targetSL && (
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--red)' }}>🛑 SL stop:</span>
+              <span style={{ fontWeight: 600, color: 'var(--red)' }}>
+                ${prediction.targetSL.toFixed(4)}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Indicator chips */}
       <div className="indicators-row">
         {Object.entries(INDICATOR_NAMES).map(([key, name]) => {

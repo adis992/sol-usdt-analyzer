@@ -68,9 +68,9 @@ export const MTF_WEIGHTS = {
 export const MTF_STRONG_THRESHOLD = 0.55
 export const MTF_SIGNAL_THRESHOLD = 0.35
 
-// Confidence thresholds
-export const STRONG_SIGNAL_THRESHOLD = 0.65  // 65% weighted consensus
-export const SIGNAL_THRESHOLD = 0.50          // 50% for weaker signal
+// Confidence thresholds - lowered for more signals
+export const STRONG_SIGNAL_THRESHOLD = 0.55  // 55% weighted consensus for STRONG
+export const SIGNAL_THRESHOLD = 0.35          // 35% for regular signal
 
 // Admin
 export const ADMIN_PASSWORD_KEY = 'sol_admin_pass'

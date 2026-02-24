@@ -7,6 +7,7 @@ import {
   addPrediction, updatePendingPredictions, getEntryPrice,
   setEntryPrice, getHistory
 } from '../services/historyService.js'
+import { sendTradeSignal } from '../services/notificationService.js'
 
 const SolDataContext = createContext(null)
 
@@ -90,6 +91,18 @@ export function SolDataProvider({ children }) {
 
                 // Always store initial prediction (including NEUTRAL)
                 addPrediction(prediction)
+                
+                // Send notification for non-NEUTRAL signals
+                if (prediction.signal !== 'NEUTRAL') {
+                  sendTradeSignal(
+                    tf.label,
+                    prediction.signal,
+                    prediction.entryPrice,
+                    prediction.targetTP,
+                    prediction.targetSL,
+                    prediction.confidence
+                  )
+                }
               } catch (e) {
                 console.warn(`[Data] Failed to load ${tf.id}:`, e.message)
               }
@@ -123,6 +136,12 @@ export function SolDataProvider({ children }) {
       setLastPriceTs(Date.now())
       priceRef.current = price
       setConnected(true)
+
+      // Check all pending predictions with current price
+      TIMEFRAMES.forEach(tf => {
+        updatePendingPredictions(tf.id, price)
+      })
+      setHistory(getHistory())
     })
     unsubsRef.current.push(unsub)
     return () => unsub()
@@ -167,6 +186,18 @@ export function SolDataProvider({ children }) {
             if (shouldRecalc) {
               addPrediction(prediction)
               setHistory(getHistory())
+              
+              // Send notification for non-NEUTRAL signals
+              if (prediction.signal !== 'NEUTRAL') {
+                sendTradeSignal(
+                  tf.label,
+                  prediction.signal,
+                  prediction.entryPrice,
+                  prediction.targetTP,
+                  prediction.targetSL,
+                  prediction.confidence
+                )
+              }
             }
           }
 
@@ -196,7 +227,16 @@ export function SolDataProvider({ children }) {
   // ── Periodic refresh of history ───────────────────────────────────────────
   useEffect(() => {
     const timer = setInterval(() => {
+      // Refresh history from storage
       setHistory(getHistory())
+
+      // Also check pending predictions with current price
+      if (priceRef.current) {
+        TIMEFRAMES.forEach(tf => {
+          updatePendingPredictions(tf.id, priceRef.current)
+        })
+        setHistory(getHistory())
+      }
     }, 10000)
     return () => clearInterval(timer)
   }, [])

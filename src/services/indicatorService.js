@@ -68,10 +68,10 @@ export function calcRSI(candles, period = 14) {
   const rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + rs))
 
   let signal = 'NEUTRAL'
-  if (rsi < 30)  signal = 'BUY'
-  if (rsi < 20)  signal = 'BUY'   // oversold
-  if (rsi > 70)  signal = 'SELL'
-  if (rsi > 80)  signal = 'SELL'  // overbought
+  if (rsi < 35)  signal = 'BUY'    // approaching oversold
+  if (rsi < 25)  signal = 'BUY'    // oversold
+  if (rsi > 65)  signal = 'SELL'   // approaching overbought
+  if (rsi > 75)  signal = 'SELL'   // overbought
 
   return { value: rsi, signal, detail: `RSI(${period}): ${rsi.toFixed(1)}` }
 }
@@ -125,8 +125,8 @@ export function calcBB(candles, period = 20, multiplier = 2) {
   let signal = 'NEUTRAL'
   if (last < lower) signal = 'BUY'
   else if (last > upper) signal = 'SELL'
-  else if (pctB < 20) signal = 'BUY'
-  else if (pctB > 80) signal = 'SELL'
+  else if (pctB < 25) signal = 'BUY'   // closer to lower band
+  else if (pctB > 75) signal = 'SELL'  // closer to upper band
 
   return {
     value: { upper, middle, lower, pctB, bandwidth: ((upper - lower) / middle) * 100 },
@@ -207,12 +207,12 @@ export function calcStochastic(candles, kPeriod = 14, dPeriod = 3) {
   const prevD = dValues[dValues.length - 2]
 
   let signal = 'NEUTRAL'
-  if (lastK < 20 && lastD < 20) signal = 'BUY'
-  else if (lastK > 80 && lastD > 80) signal = 'SELL'
-  else if (lastK < 20) signal = 'BUY'
-  else if (lastK > 80) signal = 'SELL'
-  else if (lastK > lastD && prevK <= prevD && lastK < 50) signal = 'BUY'
-  else if (lastK < lastD && prevK >= prevD && lastK > 50) signal = 'SELL'
+  if (lastK < 25 && lastD < 25) signal = 'BUY'    // both oversold
+  else if (lastK > 75 && lastD > 75) signal = 'SELL' // both overbought
+  else if (lastK < 30) signal = 'BUY'
+  else if (lastK > 70) signal = 'SELL'
+  else if (lastK > lastD && prevK <= prevD && lastK < 50) signal = 'BUY'   // bullish cross in lower zone
+  else if (lastK < lastD && prevK >= prevD && lastK > 50) signal = 'SELL'  // bearish cross in upper zone
 
   return {
     value: { k: lastK, d: lastD },
@@ -276,8 +276,8 @@ export function calcWilliams(candles, period = 14) {
   const wr = range === 0 ? -50 : ((highestH - lastC) / range) * -100
 
   let signal = 'NEUTRAL'
-  if (wr <= -80) signal = 'BUY'
-  else if (wr >= -20) signal = 'SELL'
+  if (wr <= -75) signal = 'BUY'    // oversold
+  else if (wr >= -25) signal = 'SELL' // overbought
   else if (wr <= -60) signal = 'BUY'
   else if (wr >= -40) signal = 'SELL'
 
@@ -299,10 +299,10 @@ export function calcCCI(candles, period = 20) {
   const cci = meanDev === 0 ? 0 : (recent[recent.length - 1] - smaTp) / (0.015 * meanDev)
 
   let signal = 'NEUTRAL'
-  if (cci <= -100) signal = 'BUY'
-  if (cci <= -150) signal = 'BUY'
-  if (cci >= 100)  signal = 'SELL'
-  if (cci >= 150)  signal = 'SELL'
+  if (cci <= -125) signal = 'BUY'   // strong oversold
+  if (cci <= -75)  signal = 'BUY'   // oversold
+  if (cci >= 75)   signal = 'SELL'  // overbought
+  if (cci >= 125)  signal = 'SELL'  // strong overbought
 
   return {
     value: cci,

@@ -120,3 +120,25 @@ export function sendPredictionResult(tfLabel, result, signal) {
     )
   }
 }
+
+/**
+ * Send new trade signal notification
+ */
+export function sendTradeSignal(tfLabel, signal, entryPrice, targetTP, targetSL, confidence) {
+  if (signal === 'NEUTRAL') return
+  
+  const direction = signal.includes('BUY') ? '🟢 KUPUJ' : '🔴 PRODAJ'
+  const strength = signal.includes('STRONG') ? 'JAKO' : ''
+  
+  let body = `${strength ? strength + ' ' : ''}${direction}\n\n`
+  body += `🎯 Ulaz: $${entryPrice?.toFixed(4) ?? '–'}\n`
+  if (targetTP) body += `✅ TP: $${targetTP.toFixed(4)}\n`
+  if (targetSL) body += `🛑 SL: $${targetSL.toFixed(4)}\n`
+  body += `\n📊 Pouzdanost: ${confidence?.toFixed(1)}%`
+  
+  showNotification(
+    `${tfLabel} - NOVI SIGNAL`,
+    body,
+    { type: 'trade', tag: `trade-${tfLabel}`, important: true }
+  )
+}
