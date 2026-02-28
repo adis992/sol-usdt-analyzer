@@ -110,20 +110,20 @@ export function generatePrediction(candles, tfId) {
   
   // Timeframe-based multipliers for realistic targets
   const tfMultipliers = {
-    '1m':  { strong: 0.005, normal: 0.003 },   // 0.5% / 0.3% - micro scalp
-    '3m':  { strong: 0.008, normal: 0.005 },   // 0.8% / 0.5%
-    '5m':  { strong: 0.012, normal: 0.007 },   // 1.2% / 0.7%
-    '15m': { strong: 0.020, normal: 0.012 },   // 2.0% / 1.2%
-    '30m': { strong: 0.030, normal: 0.018 },   // 3.0% / 1.8%
-    '1h':  { strong: 0.045, normal: 0.025 },   // 4.5% / 2.5%
-    '4h':  { strong: 0.080, normal: 0.050 },   // 8.0% / 5.0%
-    '6h':  { strong: 0.100, normal: 0.060 },   // 10% / 6%
-    '8h':  { strong: 0.120, normal: 0.070 },   // 12% / 7%
-    '12h': { strong: 0.150, normal: 0.090 },   // 15% / 9%
-    '1d':  { strong: 0.200, normal: 0.120 },   // 20% / 12% - swing trade
-    '1w':  { strong: 0.400, normal: 0.250 },   // 40% / 25% - weekly position
-    '1M':  { strong: 0.800, normal: 0.500 },   // 80% / 50% - monthly hold
-    '1y':  { strong: 1.500, normal: 1.000 },   // 150% / 100% - yearly vision (350-400$)
+    '1m':  { strong: 0.003, normal: 0.002 },   // 0.3% / 0.2% - micro scalp
+    '3m':  { strong: 0.005, normal: 0.003 },   // 0.5% / 0.3%
+    '5m':  { strong: 0.008, normal: 0.005 },   // 0.8% / 0.5%
+    '15m': { strong: 0.015, normal: 0.010 },   // 1.5% / 1.0%
+    '30m': { strong: 0.025, normal: 0.015 },   // 2.5% / 1.5%
+    '1h':  { strong: 0.035, normal: 0.020 },   // 3.5% / 2.0%
+    '4h':  { strong: 0.060, normal: 0.040 },   // 6.0% / 4.0%
+    '6h':  { strong: 0.075, normal: 0.050 },   // 7.5% / 5.0%
+    '8h':  { strong: 0.090, normal: 0.060 },   // 9.0% / 6.0%
+    '12h': { strong: 0.120, normal: 0.080 },   // 12% / 8%
+    '1d':  { strong: 0.850, normal: 0.800 },   // 85% / 80% - dnevni opseg SOL (150$->250$+)
+    '1w':  { strong: 3.500, normal: 3.000 },   // 350% / 300% - sedmično (150$->600$+)
+    '1M':  { strong: 8.000, normal: 7.000 },   // 800% / 700% - mjesečno (velike swing)
+    '1y':  { strong: 15.00, normal: 12.00 },   // 1500% / 1200% - godišnji rast (150$->2000$+)
   }
   
   const mult = tfMultipliers[tfId] || { strong: 0.015, normal: 0.008 }
@@ -167,13 +167,33 @@ export function generatePrediction(candles, tfId) {
 export function verifyPrediction(prediction, currentPrice) {
   if (!prediction || !currentPrice) return 'PENDING'
 
-  const { signal, entryPrice } = prediction
+  const { signal, entryPrice, tfId } = prediction
   if (!entryPrice) return 'PENDING'
 
   const priceMoved = currentPrice - entryPrice
-  const threshold = entryPrice * 0.001 // 0.1% minimum movement to count
+  const pctChange = (priceMoved / entryPrice) * 100
+  
+  // Threshold zavisi od timeframe-a - duži TF = veći threshold
+  const thresholds = {
+    '1m':  0.05,   // 0.05% za 1min
+    '3m':  0.08,   // 0.08%
+    '5m':  0.10,   // 0.1%
+    '15m': 0.15,   // 0.15%
+    '30m': 0.25,   // 0.25%
+    '1h':  0.35,   // 0.35%
+    '4h':  0.60,   // 0.6%
+    '6h':  0.75,   // 0.75%
+    '8h':  0.90,   // 0.9%
+    '12h': 1.20,   // 1.2%
+    '1d':  2.00,   // 2.0% - dnevni pomak
+    '1w':  5.00,   // 5.0% - sedmični
+    '1M':  10.0,   // 10% - mjesečni
+    '1y':  20.0,   // 20% - godišnji
+  }
+  
+  const threshold = thresholds[tfId] || 0.1
 
-  if (Math.abs(priceMoved) < threshold) return 'PENDING'
+  if (Math.abs(pctChange) < threshold) return 'PENDING'
 
   if (signal === 'BUY' || signal === 'STRONG_BUY') {
     return priceMoved > 0 ? 'HIT' : 'MISS'

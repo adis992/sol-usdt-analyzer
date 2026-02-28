@@ -260,6 +260,64 @@ export function SolDataProvider({ children }) {
     return () => clearInterval(timer)
   }, [])
 
+  // ── Timeframe-based periodic refresh (svaki TF prema svom intervalu) ───────
+  useEffect(() => {
+    if (loading) return
+
+    const timers = TIMEFRAMES.map(tf => {
+      // Svaki timeframe se osvježava po svom intervalu
+      const interval = tf.ms // milliseconds za ovaj TF
+      
+      const timer = setInterval(async () => {
+        try {
+          const current = tfDataRef.current[tf.id]
+          if (!current) return
+
+          // Re-fetch candles i regenerate prediction
+          const candles = await fetchCandles(tf.interval, 250)
+          const prediction = generatePrediction(candles, tf.id)
+
+          // Update TF data
+          const priceChange = candles.length >= 2
+            ? ((candles[candles.length - 1].close - candles[candles.length - 2].close) /
+               candles[candles.length - 2].close) * 100
+            : 0
+
+          const updated = {
+            candles,
+            prediction,
+            lastUpdate: Date.now(),
+            priceChange,
+          }
+          
+          tfDataRef.current[tf.id] = updated
+          setTfData(prev => ({ ...prev, [tf.id]: updated }))
+
+          // Store prediction if signal changed
+          if (current.prediction?.signal !== prediction.signal && prediction.signal !== 'NEUTRAL') {
+            addPrediction(prediction)
+            setHistory(getHistory())
+            
+            sendTradeSignal(
+              tf.label,
+              prediction.signal,
+              prediction.entryPrice,
+              prediction.targetTP,
+              prediction.targetSL,
+              prediction.confidence
+            )
+          }
+        } catch (e) {
+          console.warn(`[Refresh] Failed ${tf.id}:`, e.message)
+        }
+      }, interval)
+
+      return timer
+    })
+
+    return () => timers.forEach(t => clearInterval(t))
+  }, [loading])
+
   // ── Handle set entry price ─────────────────────────────────────────────────
   const updateEntryPrice = useCallback((price) => {
     setEntryPrice(price)
